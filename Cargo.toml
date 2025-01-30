@@ -1,0 +1,18 @@
+[package]
+name = "bitcoin_r1cs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ark-bls12-381 = "0.5.0"
+ark-crypto-primitives = { version = "0.5.0", features = ["crh", "r1cs"] }
+ark-ff = { version = "0.5.0", features = ["std"] }
+ark-groth16 = "0.5.0"
+ark-r1cs-std = "0.5.0"
+ark-relations = "0.5.1"
+ark-serialize = "0.5.0"
+byteorder = "1.5.0"
+chain_gang = { git = "https://github.com/nchain-innovation/chain-gang.git", version = "0.6.15", package = "chain-gang" }
+hex = "0.4.3"
+rand = "0.8.5"
+rand_chacha = "0.3.1"
