@@ -64,13 +64,17 @@ impl<F: PrimeField> AllocVar<Script, F> for ScriptVar<F> {
 
 impl<F: PrimeField> EqGadget<F> for ScriptVar<F> {
     fn is_eq(&self, other: &Self) -> Result<Boolean<F>, SynthesisError> {
-        self.0.is_eq(&other.0)
+        if self.0.is_empty() && other.0.is_empty() {
+            Ok(Boolean::<F>::TRUE)
+        } else {
+            self.0.is_eq(&other.0)
+        }
     }
 }
 
 impl<F: PrimeField> ToBytesGadget<F> for ScriptVar<F> {
-    fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
-        self.0.to_bytes_le()
+    fn to_bytes(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
+        self.0.to_bytes()
     }
 }
 
@@ -99,7 +103,7 @@ impl<F: PrimeField> PreSigHashSerialise<F> for ScriptVar<F> {
         let script_size: Vec<UInt8<F>> =
             self.size().map_err(|_| SynthesisError::AssignmentMissing)?;
         // serialised script
-        let ser_script = self.to_bytes_le()?;
+        let ser_script = self.to_bytes()?;
         // finalised serialisation
         let mut ser: Vec<UInt8<F>> = Vec::with_capacity(script_size.len() + ser_script.len());
         ser.extend_from_slice(&script_size);
@@ -151,7 +155,7 @@ mod tests {
         let cs = ConstraintSystem::<F>::new_ref();
         let allocated_script =
             ScriptVar::<F>::new_input(cs.clone(), || Ok(script.clone())).unwrap();
-        let ser_allocated_script = allocated_script.to_bytes_le().unwrap();
+        let ser_allocated_script = allocated_script.to_bytes().unwrap();
 
         for (allocated_byte, byte) in ser_allocated_script.iter().zip(script.0.iter()) {
             assert_eq!(allocated_byte.value().unwrap(), *byte)
@@ -188,7 +192,7 @@ mod tests {
         let cs = ConstraintSystem::<F>::new_ref();
         let allocated_script =
             ScriptVar::<F>::new_input(cs.clone(), || Ok(script.clone())).unwrap();
-        let allocated_script_bytes = allocated_script.to_bytes_le().unwrap().value().unwrap();
+        let allocated_script_bytes = allocated_script.to_bytes().unwrap().value().unwrap();
 
         assert_eq!(script.0, allocated_script_bytes)
     }

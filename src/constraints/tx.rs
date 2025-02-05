@@ -76,7 +76,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> Clone for TxVar<F, P> {
 impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
     /// Calculate the txid of `Self`
     pub fn txid(&self) -> Result<DigestVar<F>, SynthesisError> {
-        Hash256Gadget::<F>::evaluate(self.to_bytes_le()?.as_slice())
+        Hash256Gadget::<F>::evaluate(self.to_bytes()?.as_slice())
     }
     /// Compute the serialisation of [Tx] for `pre_sighash` calculation.
     /// See [Message Digest Algorithm](https://github.com/bitcoin-sv/bitcoin-sv/blob/master/doc/abc/replay-protected-sighash.md#digest-algorithm) for a description of the algorithm.
@@ -123,7 +123,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
         let anyone_can_pay = sighash_flags & SIGHASH_ANYONECANPAY != 0;
 
         // 1. Serialised version
-        let version: Vec<UInt8<F>> = self.version.to_bytes_le()?;
+        let version: Vec<UInt8<F>> = self.version.to_bytes()?;
         // 2. HashPrevOut
         // The first condition to be checked is that the cache is None.
         // If it is, then we either compute or set the value. Otherwise, we do nothing.
@@ -145,7 +145,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
             if !anyone_can_pay && base_flags != SIGHASH_SINGLE && base_flags != SIGHASH_NONE {
                 let mut s: Vec<UInt8<F>> = Vec::new();
                 for input in self.inputs.iter() {
-                    s.extend_from_slice(input.sequence.to_bytes_le()?.as_slice());
+                    s.extend_from_slice(input.sequence.to_bytes()?.as_slice());
                 }
                 cache.set_hash_sequence(Hash256Gadget::<F>::evaluate(&s)?);
             } else {
@@ -174,18 +174,18 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
             }
         };
         // 6. Locktime
-        let lock_time = self.lock_time.to_bytes_le()?;
+        let lock_time = self.lock_time.to_bytes()?;
 
         let mut ser: Vec<UInt8<F>> = Vec::new();
         ser.extend_from_slice(version.as_slice());
-        ser.extend_from_slice(cache.hash_prevouts().unwrap().to_bytes_le()?.as_slice());
-        ser.extend_from_slice(cache.hash_sequence().unwrap().to_bytes_le()?.as_slice());
+        ser.extend_from_slice(cache.hash_prevouts().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(cache.hash_sequence().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(input_specific_serialisation.as_slice());
-        ser.extend_from_slice(cache.hash_outputs().unwrap().to_bytes_le()?.as_slice());
+        ser.extend_from_slice(cache.hash_outputs().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(lock_time.as_slice());
         ser.extend_from_slice(
             UInt32::<F>::constant((SIGHASH_FORKID | sighash_flags) as u32)
-                .to_bytes_le()?
+                .to_bytes()?
                 .as_slice(),
         );
 
@@ -318,14 +318,14 @@ impl<F: PrimeField, P: TxVarConfig + Clone> EqGadget<F> for TxVar<F, P> {
 
 impl<F: PrimeField, P: TxVarConfig + Clone> ToBytesGadget<F> for TxVar<F, P> {
     /// Serialise `Self` for TxID calculation
-    fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
+    fn to_bytes(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         // Var Int length of inputs, outputs, and locking scripts
         let var_int_n_inputs = u64_to_var_int(P::N_INPUTS).unwrap();
         let var_int_n_outputs = u64_to_var_int(P::N_OUTPUTS).unwrap();
 
         // Serialisation
         let mut ser: Vec<UInt8<F>> = Vec::new();
-        ser.extend_from_slice(self.version.to_bytes_le()?.as_slice());
+        ser.extend_from_slice(self.version.to_bytes()?.as_slice());
         ser.extend_from_slice(
             var_int_n_inputs
                 .iter()
@@ -334,7 +334,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> ToBytesGadget<F> for TxVar<F, P> {
                 .as_slice(),
         );
         for input in self.inputs.iter() {
-            ser.extend_from_slice(input.to_bytes_le()?.as_slice());
+            ser.extend_from_slice(input.to_bytes()?.as_slice());
         }
         ser.extend_from_slice(
             var_int_n_outputs
@@ -344,9 +344,9 @@ impl<F: PrimeField, P: TxVarConfig + Clone> ToBytesGadget<F> for TxVar<F, P> {
                 .as_slice(),
         );
         for output in self.outputs.iter() {
-            ser.extend_from_slice(output.to_bytes_le()?.as_slice());
+            ser.extend_from_slice(output.to_bytes()?.as_slice());
         }
-        ser.extend_from_slice(self.lock_time.to_bytes_le()?.as_slice());
+        ser.extend_from_slice(self.lock_time.to_bytes()?.as_slice());
         Ok(ser)
     }
 }
@@ -600,7 +600,7 @@ mod tests {
 
         let cs = ConstraintSystem::<F>::new_ref();
         let tx_var = TxVar::<F, Config>::new_input(cs.clone(), || Ok(tx)).unwrap();
-        let tx_var_bytes = tx_var.to_bytes_le().unwrap().value().unwrap();
+        let tx_var_bytes = tx_var.to_bytes().unwrap().value().unwrap();
 
         assert_eq!(tx_bytes, tx_var_bytes);
     }

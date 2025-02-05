@@ -61,7 +61,7 @@ impl<F: PrimeField> EqGadget<F> for OutPointVar<F> {
 }
 
 impl<F: PrimeField> ToBytesGadget<F> for OutPointVar<F> {
-    fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
+    fn to_bytes(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         self.pre_sighash_serialise()
     }
 }
@@ -90,9 +90,9 @@ impl<F: PrimeField> PreSigHashSerialise<F> for OutPointVar<F> {
     /// `OutPointVar.prev_tx || OutPointVar.prev_index`
     fn pre_sighash_serialise(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         let mut ser: Vec<UInt8<F>> = vec![UInt8::<F>::constant(0); 36];
-        let index_le = self.prev_index.to_bytes_le()?;
+        let index_le = self.prev_index.to_bytes()?;
         // The method to_bytes_le() for DigestVar<F> returns the 32 bytes without reversing them
-        ser[..32].clone_from_slice(self.prev_tx.to_bytes_le()?.as_slice());
+        ser[..32].clone_from_slice(self.prev_tx.to_bytes()?.as_slice());
         ser[32..].clone_from_slice(index_le.as_slice());
         Ok(ser)
     }
@@ -175,7 +175,7 @@ mod tests {
         let cs = ConstraintSystem::<F>::new_ref();
         let outpoint_gadget: OutPointVar<F> =
             OutPointVar::<F>::new_input(cs.clone(), || Ok(outpoint)).unwrap();
-        let outpoint_gadget_bytes = outpoint_gadget.to_bytes_le().unwrap().value().unwrap();
+        let outpoint_gadget_bytes = outpoint_gadget.to_bytes().unwrap().value().unwrap();
 
         assert_eq!(outpoint_bytes, outpoint_gadget_bytes);
     }

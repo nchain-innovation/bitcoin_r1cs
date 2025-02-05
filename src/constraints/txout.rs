@@ -61,7 +61,7 @@ impl<F: PrimeField> EqGadget<F> for TxOutVar<F> {
 }
 
 impl<F: PrimeField> ToBytesGadget<F> for TxOutVar<F> {
-    fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
+    fn to_bytes(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         self.pre_sighash_serialise()
     }
 }
@@ -110,7 +110,7 @@ impl<F: PrimeField> PreSigHashSerialise<F> for TxOutVar<F> {
     ///
     /// `TxOutVar.amount || TxOutVar.lock_script`
     fn pre_sighash_serialise(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
-        let ser_satoshis = self.satoshis.to_bytes_le()?;
+        let ser_satoshis = self.satoshis.to_bytes()?;
         let ser_lock_script = self.lock_script.pre_sighash_serialise()?;
 
         let mut ser: Vec<UInt8<F>> = Vec::with_capacity(ser_satoshis.len() + ser_lock_script.len());
@@ -188,7 +188,7 @@ mod tests {
 
         let cs = ConstraintSystem::<F>::new_ref();
         let txout_gadget: TxOutVar<F> = TxOutVar::<F>::new_input(cs.clone(), || Ok(txout)).unwrap();
-        let txout_gadget_bytes = txout_gadget.to_bytes_le().unwrap().value().unwrap();
+        let txout_gadget_bytes = txout_gadget.to_bytes().unwrap().value().unwrap();
 
         assert_eq!(txout_bytes, txout_gadget_bytes);
     }

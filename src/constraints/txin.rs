@@ -69,11 +69,11 @@ impl<F: PrimeField> EqGadget<F> for TxInVar<F> {
 }
 
 impl<F: PrimeField> ToBytesGadget<F> for TxInVar<F> {
-    fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
+    fn to_bytes(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         let mut ser: Vec<UInt8<F>> = Vec::new();
-        ser.extend_from_slice(self.prev_output.to_bytes_le()?.as_slice());
+        ser.extend_from_slice(self.prev_output.to_bytes()?.as_slice());
         ser.extend_from_slice(self.unlock_script.pre_sighash_serialise()?.as_slice());
-        ser.extend_from_slice(self.sequence.to_bytes_le()?.as_slice());
+        ser.extend_from_slice(self.sequence.to_bytes()?.as_slice());
         Ok(ser)
     }
 }
@@ -130,8 +130,8 @@ impl<F: PrimeField> TxInVar<F> {
     ) -> Result<Vec<UInt8<F>>, SynthesisError> {
         let ser_prev_output = self.prev_output.pre_sighash_serialise()?;
         let ser_prev_lock_script = prev_lock_script.pre_sighash_serialise()?;
-        let ser_satoshis = satoshis.to_bytes_le()?;
-        let ser_sequence = self.sequence.to_bytes_le()?;
+        let ser_satoshis = satoshis.to_bytes()?;
+        let ser_sequence = self.sequence.to_bytes()?;
 
         let mut ser: Vec<UInt8<F>> =
             Vec::with_capacity(ser_prev_output.len() + ser_prev_lock_script.len() + 12);
@@ -178,12 +178,8 @@ mod tests {
         let satoshis: u64 = 40000;
         let mut s = Vec::new();
         txin.prev_output.write(&mut s).unwrap();
-        s.write_all(
-            u64_to_var_int(unlock_script.0.len())
-                .unwrap()
-                .as_slice(),
-        )
-        .unwrap();
+        s.write_all(u64_to_var_int(unlock_script.0.len()).unwrap().as_slice())
+            .unwrap();
         s.write_all(unlock_script.0.as_slice()).unwrap();
         s.write_u64::<LittleEndian>(satoshis.clone()).unwrap();
         s.write_u32::<LittleEndian>(txin.sequence.clone()).unwrap();
@@ -254,7 +250,7 @@ mod tests {
 
         let cs = ConstraintSystem::<F>::new_ref();
         let txin_gadget: TxInVar<F> = TxInVar::<F>::new_input(cs.clone(), || Ok(txin)).unwrap();
-        let txin_gadget_bytes = txin_gadget.to_bytes_le().unwrap().value().unwrap();
+        let txin_gadget_bytes = txin_gadget.to_bytes().unwrap().value().unwrap();
 
         assert_eq!(txin_bytes, txin_gadget_bytes);
     }
