@@ -12,7 +12,7 @@ ark-r1cs-std = "0.3.0"
 ark-relations = "0.3.0"
 ark-serialize = "0.3.0"
 byteorder = "1.5.0"
-chain_gang = { git = "https://github.com/nchain-innovation/chain-gang.git", version = "0.6.15", package = "chain-gang" }
+chain_gang = { git = "https://github.com/nchain-innovation/chain-gang.git", tag = "v0.6.15", package = "chain-gang" }
 hex = "0.4.3"
 rand = "0.8.5"
 rand_chacha = "0.3.1"

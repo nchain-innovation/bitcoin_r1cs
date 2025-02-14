@@ -353,7 +353,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 [[package]]
 name = "chain-gang"
 version = "0.6.15"
-source = "git+https://github.com/nchain-innovation/chain-gang.git#a960d330bb3114d3cdc6f7f3ebfffc3fd28b4244"
+source = "git+https://github.com/nchain-innovation/chain-gang.git?tag=v0.6.15#a4cf7bcbd654641fe86334cdf722dd0a2f69face"
 dependencies = [
  "base58",
  "byteorder",

@@ -21,7 +21,7 @@ use ark_relations::r1cs::ConstraintSystemRef;
 
 use std::io::Result as IoResult;
 
-use crate::util::u64_to_var_int;
+use crate::util::usize_to_var_int;
 
 /// R1CS version of a [Script]
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ impl<F: PrimeField> ScriptVar<F> {
     /// It allocates the elements of the length as constants.
     /// This is ok because the size of the script (unlocking or locking script) is fixed in a circuit.
     pub fn size(&self) -> IoResult<Vec<UInt8<F>>> {
-        Ok(u64_to_var_int(self.0.len())?
+        Ok(usize_to_var_int(self.0.len())?
             .into_iter()
             .map(|el| UInt8::<F>::constant(el))
             .collect::<Vec<UInt8<F>>>())

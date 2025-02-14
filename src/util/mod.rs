@@ -7,7 +7,7 @@ use std::io::Result as IoResult;
 use crate::constraints::tx::TxVarConfig;
 
 /// Convert u64 to var_int
-pub fn u64_to_var_int(length: usize) -> IoResult<Vec<u8>> {
+pub fn usize_to_var_int(length: usize) -> IoResult<Vec<u8>> {
     let mut s: Vec<u8> = Vec::new();
     if length <= 252 {
         s.write_u8(length as u8)?;
