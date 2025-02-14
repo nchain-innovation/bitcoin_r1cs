@@ -146,7 +146,7 @@ impl<F: PrimeField> TxInVar<F> {
 
 #[cfg(test)]
 mod tests {
-    use crate::util::u64_to_var_int;
+    use crate::util::usize_to_var_int;
 
     use super::*;
     use ark_bls12_381::Fq as F;
@@ -178,12 +178,8 @@ mod tests {
         let satoshis: u64 = 40000;
         let mut s = Vec::new();
         txin.prev_output.write(&mut s).unwrap();
-        s.write_all(
-            u64_to_var_int(unlock_script.0.len())
-                .unwrap()
-                .as_slice(),
-        )
-        .unwrap();
+        s.write_all(usize_to_var_int(unlock_script.0.len()).unwrap().as_slice())
+            .unwrap();
         s.write_all(unlock_script.0.as_slice()).unwrap();
         s.write_u64::<LittleEndian>(satoshis.clone()).unwrap();
         s.write_u32::<LittleEndian>(txin.sequence.clone()).unwrap();

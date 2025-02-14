@@ -1,13 +1,13 @@
 use byteorder::{LittleEndian, WriteBytesExt};
-use std::io::Result as IoResult;
-use chain_gang::messages::{Tx, TxIn, TxOut, OutPoint};
+use chain_gang::messages::{OutPoint, Tx, TxIn, TxOut};
 use chain_gang::script::Script;
 use chain_gang::util::Hash256;
+use std::io::Result as IoResult;
 
 use crate::constraints::tx::TxVarConfig;
 
 /// Convert u64 to var_int
-pub fn u64_to_var_int(length: usize) -> IoResult<Vec<u8>> {
+pub fn usize_to_var_int(length: usize) -> IoResult<Vec<u8>> {
     let mut s: Vec<u8> = Vec::new();
     if length <= 252 {
         s.write_u8(length as u8)?;
@@ -61,7 +61,6 @@ mod tests {
 
     use super::default_tx;
 
-
     #[derive(Clone)]
     struct Config;
     impl TxVarConfig for Config {
@@ -72,7 +71,7 @@ mod tests {
         const LEN_PREV_LOCK_SCRIPT: Option<usize> = None;
         const PRE_SIGHASH_N_INPUT: Option<usize> = None;
     }
-    
+
     #[test]
     fn test_default_tx() {
         let test_tx = default_tx::<Config>();

@@ -12,7 +12,7 @@ use ark_r1cs_std::{
 
 use crate::constraints::{script::ScriptVar, txin::TxInVar, txout::TxOutVar};
 use crate::traits::PreSigHashSerialise;
-use crate::util::u64_to_var_int;
+use crate::util::usize_to_var_int;
 use chain_gang::messages::Tx;
 
 use ark_relations::r1cs::{Namespace, SynthesisError};
@@ -320,8 +320,8 @@ impl<F: PrimeField, P: TxVarConfig + Clone> ToBytesGadget<F> for TxVar<F, P> {
     /// Serialise `Self` for TxID calculation
     fn to_bytes_le(&self) -> Result<Vec<UInt8<F>>, SynthesisError> {
         // Var Int length of inputs, outputs, and locking scripts
-        let var_int_n_inputs = u64_to_var_int(P::N_INPUTS).unwrap();
-        let var_int_n_outputs = u64_to_var_int(P::N_OUTPUTS).unwrap();
+        let var_int_n_inputs = usize_to_var_int(P::N_INPUTS).unwrap();
+        let var_int_n_outputs = usize_to_var_int(P::N_OUTPUTS).unwrap();
 
         // Serialisation
         let mut ser: Vec<UInt8<F>> = Vec::new();
