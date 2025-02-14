@@ -394,7 +394,7 @@ checksum = "8dd4e5f0bf8285d5ed538d27fab7411f3e297908fd93c62195de8bee3f199e82"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.98",
 ]
 
 [[package]]
@@ -472,11 +472,8 @@ checksum = "bb97d56060ee67d285efb8001fec9d2a4c710c32efd2e14b5cbb5ba71930fc2d"
 name = "bitcoin_r1cs"
 version = "0.1.0"
 dependencies = [
-<<<<<<< HEAD
  "ark-bls12-377",
-=======
  "anyhow",
->>>>>>> 6908c79 (Initial implementation of RefTx)
  "ark-bls12-381",
  "ark-crypto-primitives",
  "ark-ec",
@@ -930,9 +927,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.21.0"
+version = "1.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cde51589ab56b20a6f686b2c68f7a0bd6add753d697abf720d63f8db3ab7b1ad"
+checksum = "945462a4b81e43c4e3ba96bd7b49d834c6f61198356aa858733bc4acf3cbe62e"
 
 [[package]]
 name = "opaque-debug"
