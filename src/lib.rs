@@ -25,6 +25,9 @@
 
 /// R1CS version of Bitcoin structures
 pub mod constraints;
+/// Export Sha256 R1CS constaints. This is taken from [ark_crypto_primitives]. It was the easiest
+/// solution to avoid breaking dependencies
+pub mod sha256;
 
 pub mod traits;
 pub mod util;

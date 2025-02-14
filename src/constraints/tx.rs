@@ -1,5 +1,5 @@
 //! Implementation of [TxVar], R1CS version of a Bitcoin [Tx]
-use ark_crypto_primitives::crh::sha256::constraints::DigestVar;
+use crate::sha256::constraints::DigestVar;
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
     R1CSVar,
@@ -178,10 +178,10 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
 
         let mut ser: Vec<UInt8<F>> = Vec::new();
         ser.extend_from_slice(version.as_slice());
-        ser.extend_from_slice(cache.hash_prevouts().unwrap().to_bytes()?.as_slice());
-        ser.extend_from_slice(cache.hash_sequence().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(cache.hash_prevouts.as_ref().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(cache.hash_sequence.as_ref().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(input_specific_serialisation.as_slice());
-        ser.extend_from_slice(cache.hash_outputs().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(cache.hash_outputs.as_ref().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(lock_time.as_slice());
         ser.extend_from_slice(
             UInt32::<F>::constant((SIGHASH_FORKID | sighash_flags) as u32)

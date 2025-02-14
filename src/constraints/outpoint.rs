@@ -7,7 +7,7 @@ use ark_r1cs_std::{
     uint32::UInt32,
 };
 
-use ark_crypto_primitives::crh::sha256::constraints::DigestVar;
+use crate::sha256::constraints::DigestVar;
 
 use crate::traits::PreSigHashSerialise;
 use ark_relations::r1cs::{Namespace, SynthesisError};
