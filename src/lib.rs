@@ -23,11 +23,20 @@
 //! assert!(cs.is_satisfied().unwrap());
 //! ```
 
+/// Bitcoin Predicates, enforcing conditions of the form `C((spent_data, unlocking_data, spending_data), witness) = 1`
+pub mod bitcoin_predicates;
 /// R1CS version of Bitcoin structures
 pub mod constraints;
 /// Export Sha256 R1CS constaints. This is taken from [ark_crypto_primitives]. It was the easiest
 /// solution to avoid breaking dependencies
 pub mod sha256;
+/// RefTx circuit, enforcing conditions of the form `C'((spent_data, unlocking_data, integrity_tag), (witness, spending_data)) = 1`
+pub mod reftx;
+/// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in RefTx
+pub mod transaction_integrity_gadget;
+
+#[macro_use]
+pub mod macros;
 
 pub mod traits;
 pub mod util;

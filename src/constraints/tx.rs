@@ -45,10 +45,6 @@ pub trait TxVarConfig {
     const LEN_UNLOCK_SCRIPTS: &[usize];
     /// Length of locking scripts
     const LEN_LOCK_SCRIPTS: &[usize];
-    /// Length of script_code for sighash calculation
-    const LEN_PREV_LOCK_SCRIPT: Option<usize>;
-    /// Index of the input for which we compute the pre_sighash
-    const PRE_SIGHASH_N_INPUT: Option<usize>;
 }
 
 /// R1CS version of [Tx]
@@ -84,40 +80,12 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
     /// **Note**: The function assumes that `prev_lock_script` has already been modified to handle `OP_CODESEPARATOR`.
     pub fn pre_sighash_serialise(
         &self,
+        n_input: usize,
         prev_lock_script: &ScriptVar<F>,
-        satoshis: &UInt64<F>,
+        prev_amount: &UInt64<F>,
         sighash_flags: &u8,
         cache: &mut SigHashCacheVar<F>,
     ) -> Result<Vec<UInt8<F>>, SynthesisError> {
-        /*
-         *
-         * Validate configuration
-         *
-         */
-
-        // Check that P::PRE_SIGHASH_N_INPUT is set
-        assert!(
-            P::PRE_SIGHASH_N_INPUT.is_some(),
-            "P::PRE_SIGHASH_N_INPUT must be set when computing the pre_sighash"
-        );
-        assert!(
-            P::LEN_PREV_LOCK_SCRIPT.is_some(),
-            "P::LEN_PREV_LOCK_SCRIPT must be set when computing the pre_sighash"
-        );
-
-        let len_prev_lock_script = P::LEN_PREV_LOCK_SCRIPT.unwrap();
-        // Check that prev_lock_script has the correct length
-        assert_eq!(
-            prev_lock_script.0.len(),
-            len_prev_lock_script,
-            "The previous locking script has length: {}, different from P::LEN_PREV_LOCK_SCRIPT: {}",
-            prev_lock_script.0.len(),
-            len_prev_lock_script,
-        );
-
-        // n_input for indexing
-        let n_input_usize = P::PRE_SIGHASH_N_INPUT.unwrap();
-
         // Handle sighash flags
         let base_flags = sighash_flags & 31;
         let anyone_can_pay = sighash_flags & SIGHASH_ANYONECANPAY != 0;
@@ -133,9 +101,9 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 for input in self.inputs.iter() {
                     s.extend_from_slice(input.prev_output.pre_sighash_serialise()?.as_slice());
                 }
-                cache.set_hash_prevouts(Hash256Gadget::<F>::evaluate(&s)?);
+                cache.hash_prevouts = Some(Hash256Gadget::<F>::evaluate(&s)?);
             } else {
-                cache.set_hash_prevouts(DigestVar(vec![UInt8::<F>::constant(0); 32]));
+                cache.hash_prevouts = Some(DigestVar(vec![UInt8::<F>::constant(0); 32]));
             }
         };
         // 3. HashSequence
@@ -147,14 +115,14 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 for input in self.inputs.iter() {
                     s.extend_from_slice(input.sequence.to_bytes()?.as_slice());
                 }
-                cache.set_hash_sequence(Hash256Gadget::<F>::evaluate(&s)?);
+                cache.hash_sequence = Some(Hash256Gadget::<F>::evaluate(&s)?);
             } else {
-                cache.set_hash_sequence(DigestVar(vec![UInt8::<F>::constant(0); 32]));
+                cache.hash_sequence = Some(DigestVar(vec![UInt8::<F>::constant(0); 32]));
             }
         };
         // 4. Input specific part
         let input_specific_serialisation =
-            self.inputs[n_input_usize].pre_sighash_serialise(prev_lock_script, satoshis)?;
+            self.inputs[n_input].pre_sighash_serialise(prev_lock_script, prev_amount)?;
         // 5. HashOutputs
         // The first condition to be checked is that the cache is None.
         // If it is, then we either compute or set the value. Otherwise, we do nothing.
@@ -164,13 +132,13 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 for output in self.outputs.iter() {
                     s.extend_from_slice(output.pre_sighash_serialise()?.as_slice());
                 }
-                cache.set_hash_outputs(Hash256Gadget::<F>::evaluate(&s)?);
-            } else if base_flags == SIGHASH_SINGLE && n_input_usize < self.outputs.len() {
-                cache.set_hash_outputs(Hash256Gadget::<F>::evaluate(
-                    &self.outputs[n_input_usize].pre_sighash_serialise()?,
+                cache.hash_outputs = Some(Hash256Gadget::<F>::evaluate(&s)?);
+            } else if base_flags == SIGHASH_SINGLE && n_input < self.outputs.len() {
+                cache.hash_outputs = Some(Hash256Gadget::<F>::evaluate(
+                    &self.outputs[n_input].pre_sighash_serialise()?,
                 )?);
             } else {
-                cache.set_hash_outputs(DigestVar(vec![UInt8::<F>::constant(0); 32]));
+                cache.hash_outputs = Some(DigestVar(vec![UInt8::<F>::constant(0); 32]));
             }
         };
         // 6. Locktime
@@ -178,10 +146,31 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
 
         let mut ser: Vec<UInt8<F>> = Vec::new();
         ser.extend_from_slice(version.as_slice());
-        ser.extend_from_slice(cache.hash_prevouts.as_ref().unwrap().to_bytes()?.as_slice());
-        ser.extend_from_slice(cache.hash_sequence.as_ref().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(
+            cache
+                .hash_prevouts
+                .as_ref()
+                .unwrap()
+                .to_bytes_le()?
+                .as_slice(),
+        );
+        ser.extend_from_slice(
+            cache
+                .hash_sequence
+                .as_ref()
+                .unwrap()
+                .to_bytes_le()?
+                .as_slice(),
+        );
         ser.extend_from_slice(input_specific_serialisation.as_slice());
-        ser.extend_from_slice(cache.hash_outputs.as_ref().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(
+            cache
+                .hash_outputs
+                .as_ref()
+                .unwrap()
+                .to_bytes_le()?
+                .as_slice(),
+        );
         ser.extend_from_slice(lock_time.as_slice());
         ser.extend_from_slice(
             UInt32::<F>::constant((SIGHASH_FORKID | sighash_flags) as u32)
@@ -194,13 +183,19 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
     /// Sighash calculation
     pub fn sighash(
         &self,
+        n_input: usize,
         prev_lock_script: &ScriptVar<F>,
-        satoshis: &UInt64<F>,
+        prev_amount: &UInt64<F>,
         sighash_flags: &u8,
         cache: &mut SigHashCacheVar<F>,
     ) -> Result<DigestVar<F>, SynthesisError> {
-        let pre_sighash =
-            self.pre_sighash_serialise(prev_lock_script, satoshis, sighash_flags, cache)?;
+        let pre_sighash = self.pre_sighash_serialise(
+            n_input,
+            prev_lock_script,
+            prev_amount,
+            sighash_flags,
+            cache,
+        )?;
         Hash256Gadget::<F>::evaluate(&pre_sighash)
     }
 }
@@ -261,8 +256,9 @@ impl<F: PrimeField, P: TxVarConfig + Clone> AllocVar<Tx, F> for TxVar<F, P> {
             assert_eq!(
                 tx.inputs[i].unlock_script.0.len(),
                 P::LEN_UNLOCK_SCRIPTS[i],
-                "tx.inputs[{}].len() is different from the one set in the parameters: {}",
+                "tx.inputs[{}].len() = {} is different from the one set in the parameters: {}",
                 i,
+                tx.inputs[i].unlock_script.0.len(),
                 P::LEN_UNLOCK_SCRIPTS[i]
             );
         }
@@ -271,8 +267,9 @@ impl<F: PrimeField, P: TxVarConfig + Clone> AllocVar<Tx, F> for TxVar<F, P> {
             assert_eq!(
                 tx.outputs[i].lock_script.0.len(),
                 P::LEN_LOCK_SCRIPTS[i],
-                "P::LEN_LOCK_SCRIPT[{}].len() is different from the one set in the parameters: {}",
+                "P::LEN_LOCK_SCRIPT[{}].len() = {} is different from the one set in the parameters: {}",
                 i,
+                tx.outputs[i].lock_script.0.len(),
                 P::LEN_LOCK_SCRIPTS[i]
             );
         }
@@ -401,8 +398,6 @@ mod tests {
         const N_OUTPUTS: usize = 2;
         const LEN_UNLOCK_SCRIPTS: &[usize] = &[0];
         const LEN_LOCK_SCRIPTS: &[usize] = &[0x19, 0x19]; // len P2PKH
-        const LEN_PREV_LOCK_SCRIPT: Option<usize> = Some(0x19);
-        const PRE_SIGHASH_N_INPUT: Option<usize> = Some(0usize);
     }
 
     fn test_pre_sighash_serialisation(sighash_flags: u8) -> () {
@@ -445,6 +440,7 @@ mod tests {
         let mut cache_var = SigHashCacheVar::<F>::new();
         let pre_sighash_var = tx_var
             .pre_sighash_serialise(
+                0,
                 &ScriptVar::<F>::new_input(cs.clone(), || Ok(lock_script)).unwrap(),
                 &UInt64::<F>::new_input(cs.clone(), || Ok(260000000)).unwrap(),
                 &sighash_flags,
@@ -517,6 +513,7 @@ mod tests {
         let mut cache_var = SigHashCacheVar::<F>::new();
         let sighash_var = tx_var
             .sighash(
+                0,
                 &ScriptVar::<F>::new_input(cs.clone(), || Ok(lock_script)).unwrap(),
                 &UInt64::<F>::new_input(cs.clone(), || Ok(260000000)).unwrap(),
                 &sighash_type,

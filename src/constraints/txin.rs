@@ -120,24 +120,24 @@ impl<F: PrimeField> TxInVar<F> {
 
     /// Compute the serialisation of [TxInVar] for pre_sighash calculation:
     ///
-    /// `TxInVar.prev_output || unlock_script || satoshis || TxInVar.sequence`
+    /// `TxInVar.prev_output || prev_lock_script || prev_amount || TxInVar.sequence`
     ///
     /// **NOTE**: this function assumes that `prev_lock_script` has already been modified to handle `OP_CODESEPARATOR`.
     pub fn pre_sighash_serialise(
         &self,
         prev_lock_script: &ScriptVar<F>,
-        satoshis: &UInt64<F>,
+        prev_amount: &UInt64<F>,
     ) -> Result<Vec<UInt8<F>>, SynthesisError> {
         let ser_prev_output = self.prev_output.pre_sighash_serialise()?;
         let ser_prev_lock_script = prev_lock_script.pre_sighash_serialise()?;
-        let ser_satoshis = satoshis.to_bytes()?;
+        let ser_prev_amount = prev_amount.to_bytes()?;
         let ser_sequence = self.sequence.to_bytes()?;
 
         let mut ser: Vec<UInt8<F>> =
             Vec::with_capacity(ser_prev_output.len() + ser_prev_lock_script.len() + 12);
         ser.extend_from_slice(ser_prev_output.as_slice());
         ser.extend_from_slice(ser_prev_lock_script.as_slice());
-        ser.extend_from_slice(ser_satoshis.as_slice());
+        ser.extend_from_slice(ser_prev_amount.as_slice());
         ser.extend_from_slice(ser_sequence.as_slice());
 
         Ok(ser)
@@ -175,13 +175,13 @@ mod tests {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 100, 99, 98, 97, 96, 100, 99, 98, 97, 96, 100, 99, 98, 97,
             96, 100,
         ]);
-        let satoshis: u64 = 40000;
+        let prev_amount: u64 = 40000;
         let mut s = Vec::new();
         txin.prev_output.write(&mut s).unwrap();
         s.write_all(usize_to_var_int(unlock_script.0.len()).unwrap().as_slice())
             .unwrap();
         s.write_all(unlock_script.0.as_slice()).unwrap();
-        s.write_u64::<LittleEndian>(satoshis.clone()).unwrap();
+        s.write_u64::<LittleEndian>(prev_amount.clone()).unwrap();
         s.write_u32::<LittleEndian>(txin.sequence.clone()).unwrap();
 
         let cs = ConstraintSystem::<F>::new_ref();
@@ -190,7 +190,7 @@ mod tests {
         for (b1, b2) in txin_var
             .pre_sighash_serialise(
                 &ScriptVar::<F>::new_input(cs.clone(), || Ok(unlock_script)).unwrap(),
-                &UInt64::<F>::new_input(cs.clone(), || Ok(satoshis)).unwrap(),
+                &UInt64::<F>::new_input(cs.clone(), || Ok(prev_amount)).unwrap(),
             )
             .unwrap()
             .iter()
