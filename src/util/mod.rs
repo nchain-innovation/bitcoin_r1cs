@@ -6,7 +6,7 @@ use std::io::Result as IoResult;
 
 use crate::constraints::tx::TxVarConfig;
 
-/// Convert u64 to var_int
+/// Convert usize to var_int
 pub fn usize_to_var_int(length: usize) -> IoResult<Vec<u8>> {
     let mut s: Vec<u8> = Vec::new();
     if length <= 252 {
@@ -25,7 +25,7 @@ pub fn usize_to_var_int(length: usize) -> IoResult<Vec<u8>> {
     Ok(s)
 }
 
-/// Generate default Tx according to TxVarConfig
+/// Generate default [Tx] according to [TxVarConfig]
 pub fn default_tx<P: TxVarConfig>() -> Tx {
     let version: u32 = 0;
     let mut inputs: Vec<TxIn> = Vec::with_capacity(P::N_INPUTS);
@@ -68,8 +68,6 @@ mod tests {
         const N_OUTPUTS: usize = 1;
         const LEN_UNLOCK_SCRIPTS: &[usize] = &[0x6b];
         const LEN_LOCK_SCRIPTS: &[usize] = &[0x19];
-        const LEN_PREV_LOCK_SCRIPT: Option<usize> = None;
-        const PRE_SIGHASH_N_INPUT: Option<usize> = None;
     }
 
     #[test]
