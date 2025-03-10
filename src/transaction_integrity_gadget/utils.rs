@@ -12,15 +12,15 @@ pub fn to_fp_chunks<F: PrimeField>(data: &[u8]) -> Vec<F> {
 /// Get the size of the chunks the data should be split into
 /// Used in [to_fp_chunks]
 pub fn get_chunk_size<F: PrimeField>() -> usize {
-    if F::MODULUS_BIT_SIZE > 256 {
+    if F::size_in_bits() > 256 {
         32
-    } else if F::MODULUS_BIT_SIZE > 128 {
+    } else if F::size_in_bits() > 128 {
         16
-    } else if F::MODULUS_BIT_SIZE > 64 {
+    } else if F::size_in_bits() > 64 {
         8
-    } else if F::MODULUS_BIT_SIZE > 32 {
+    } else if F::size_in_bits() > 32 {
         4
-    } else if F::MODULUS_BIT_SIZE > 16 {
+    } else if F::size_in_bits() > 16 {
         2
     } else {
         1

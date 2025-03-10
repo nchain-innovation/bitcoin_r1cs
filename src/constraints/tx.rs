@@ -151,7 +151,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 .hash_prevouts
                 .as_ref()
                 .unwrap()
-                .to_bytes_le()?
+                .to_bytes()?
                 .as_slice(),
         );
         ser.extend_from_slice(
@@ -159,7 +159,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 .hash_sequence
                 .as_ref()
                 .unwrap()
-                .to_bytes_le()?
+                .to_bytes()?
                 .as_slice(),
         );
         ser.extend_from_slice(input_specific_serialisation.as_slice());
@@ -168,7 +168,7 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
                 .hash_outputs
                 .as_ref()
                 .unwrap()
-                .to_bytes_le()?
+                .to_bytes()?
                 .as_slice(),
         );
         ser.extend_from_slice(lock_time.as_slice());

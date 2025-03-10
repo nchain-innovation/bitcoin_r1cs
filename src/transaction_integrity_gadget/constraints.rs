@@ -39,11 +39,11 @@ pub struct TransactionIntegrityGadget<F: PrimeField, P: TransactionIntegrityConf
 
 impl<F: PrimeField> TransactionIntegrityTagVar<F> {
     /// Convert the FpVar elements of the tag into their byte representation
-    pub fn to_bytes_le(&self) -> Result<Vec<Vec<UInt8<F>>>, SynthesisError> {
+    pub fn to_bytes(&self) -> Result<Vec<Vec<UInt8<F>>>, SynthesisError> {
         let chunk_size = get_chunk_size::<F>();
         let mut result: Vec<Vec<UInt8<F>>> = Vec::new();
         for fp in self.inner.iter() {
-            result.push(fp.to_bytes_le()?[..chunk_size].to_vec());
+            result.push(fp.to_bytes()?[..chunk_size].to_vec());
         }
 
         Ok(result)
@@ -107,7 +107,7 @@ impl<F: PrimeField, P: TransactionIntegrityConfig + TxVarConfig + Clone>
         let chunk_size = get_chunk_size::<F>();
         let mut is_valid_tag: Vec<Boolean<F>> = Vec::new();
         for (public, computed) in tag
-            .to_bytes_le()?
+            .to_bytes()?
             .iter()
             .zip(computed_tag.0.chunks_exact(chunk_size))
         {
