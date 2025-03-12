@@ -32,6 +32,9 @@ pub mod constraints;
 pub mod sha256;
 /// RefTx circuit, enforcing conditions of the form `C'((spent_data, unlocking_data, integrity_tag), (witness, spending_data)) = 1`
 pub mod reftx;
+/// Implementation of Sha256 R1CS constraints taken from [ark_crypto_primitives]
+/// Re-exporting was the easiest way to avoid breaking dependencies
+pub mod sha256;
 /// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in RefTx
 pub mod transaction_integrity_gadget;
 

@@ -14,6 +14,7 @@ use crate::{
         TransactionIntegrityConfig, TransactionIntegrityTag,
         constraints::{TransactionIntegrityGadget, TransactionIntegrityTagVar},
     },
+    util::default_tx,
 };
 
 pub struct RefTxCircuit<
@@ -22,12 +23,12 @@ pub struct RefTxCircuit<
     P: TxVarConfig + TransactionIntegrityConfig + Clone,
 > {
     /// Public inputs
-    pub locking_data: Option<B::LockingData>,
+    pub locking_data: B::LockingData,
     pub unlocking_data: B::UnlockingData,
-    pub integrity_tag: TransactionIntegrityTag,
+    pub integrity_tag: Option<TransactionIntegrityTag>,
     /// Witness values
-    pub witness: Option<B::Witness>,
-    pub spending_data: Tx,
+    pub witness: B::Witness,
+    pub spending_data: Option<Tx>,
     pub prev_lock_script: Option<Script>,
     pub prev_amount: Option<u64>,
     pub sighash_cache: Option<SigHashCache>,
@@ -44,16 +45,18 @@ where
     fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
         // Allocate the inputs
         let locking_data: B::LockingDataVar =
-            B::LockingDataVar::new_input(cs.clone(), || Ok(self.locking_data.unwrap_or_default()))?;
+            B::LockingDataVar::new_input(cs.clone(), || Ok(self.locking_data))?;
         let unlocking_data: B::UnlockingDataVar =
             B::UnlockingDataVar::new_input(cs.clone(), || Ok(self.unlocking_data))?;
         let integrity_tag: TransactionIntegrityTagVar<F> =
-            TransactionIntegrityTagVar::<F>::new_input(cs.clone(), || Ok(self.integrity_tag))?;
+            TransactionIntegrityTagVar::<F>::new_input(cs.clone(), || {
+                Ok(self.integrity_tag.unwrap_or_default())
+            })?;
         // Allocate the witnesses
-        let witness: B::WitnessVar =
-            B::WitnessVar::new_witness(cs.clone(), || Ok(self.witness.unwrap_or_default()))?;
-        let spending_data: TxVar<F, P> =
-            TxVar::<F, P>::new_input(cs.clone(), || Ok(self.spending_data))?;
+        let witness: B::WitnessVar = B::WitnessVar::new_witness(cs.clone(), || Ok(self.witness))?;
+        let spending_data: TxVar<F, P> = TxVar::<F, P>::new_input(cs.clone(), || {
+            Ok(self.spending_data.unwrap_or(default_tx::<P>()))
+        })?;
         let default_prev_lock_script = Script(vec![0; P::LEN_PREV_LOCK_SCRIPT]);
         let prev_lock_script: ScriptVar<F> = ScriptVar::<F>::new_witness(cs.clone(), || {
             Ok(self.prev_lock_script.unwrap_or(default_prev_lock_script))
@@ -165,11 +168,11 @@ mod test {
         );
         let test_predicate = TestPredicate::new(p2pkh::create_lock_script(&hash160), 0);
         let test_circuit = RefTxCircuit::<TestPredicate, F, Config> {
-            locking_data: Some(BitcoinUnit::default()),
+            locking_data: BitcoinUnit::default(),
             unlocking_data: BitcoinUnit::default(),
-            integrity_tag: tag,
-            witness: None,
-            spending_data: tx,
+            integrity_tag: Some(tag),
+            witness: BitcoinUnit::default(),
+            spending_data: Some(tx),
             prev_lock_script: Some(Script(vec![])),
             prev_amount: Some(260000),
             sighash_cache: None,

@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 use std::marker::PhantomData;
 use std::result::Result;
 
-use ark_crypto_primitives::crh::sha256::constraints::DigestVar;
+use crate::sha256::constraints::DigestVar;
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
     alloc::AllocVar,
@@ -111,7 +111,7 @@ impl<F: PrimeField, P: TransactionIntegrityConfig + TxVarConfig + Clone>
             .iter()
             .zip(computed_tag.0.chunks_exact(chunk_size))
         {
-            is_valid_tag.push(public.is_eq(&computed.to_vec())?);
+            is_valid_tag.push(public.is_eq(computed)?);
         }
 
         Boolean::<F>::kary_and(&is_valid_tag)?.enforce_equal(&Boolean::<F>::TRUE)?;

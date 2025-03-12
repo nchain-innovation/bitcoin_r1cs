@@ -27,7 +27,7 @@ pub struct TransactionIntegrityScheme<P: TransactionIntegrityConfig> {
 }
 
 /// The Transaction Integrity Tag
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, Default)]
 pub struct TransactionIntegrityTag {
     pub inner: [u8; 32],
 }

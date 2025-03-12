@@ -146,31 +146,10 @@ impl<F: PrimeField, P: TxVarConfig + Clone> TxVar<F, P> {
 
         let mut ser: Vec<UInt8<F>> = Vec::new();
         ser.extend_from_slice(version.as_slice());
-        ser.extend_from_slice(
-            cache
-                .hash_prevouts
-                .as_ref()
-                .unwrap()
-                .to_bytes()?
-                .as_slice(),
-        );
-        ser.extend_from_slice(
-            cache
-                .hash_sequence
-                .as_ref()
-                .unwrap()
-                .to_bytes()?
-                .as_slice(),
-        );
+        ser.extend_from_slice(cache.hash_prevouts.as_ref().unwrap().to_bytes()?.as_slice());
+        ser.extend_from_slice(cache.hash_sequence.as_ref().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(input_specific_serialisation.as_slice());
-        ser.extend_from_slice(
-            cache
-                .hash_outputs
-                .as_ref()
-                .unwrap()
-                .to_bytes()?
-                .as_slice(),
-        );
+        ser.extend_from_slice(cache.hash_outputs.as_ref().unwrap().to_bytes()?.as_slice());
         ser.extend_from_slice(lock_time.as_slice());
         ser.extend_from_slice(
             UInt32::<F>::constant((SIGHASH_FORKID | sighash_flags) as u32)
