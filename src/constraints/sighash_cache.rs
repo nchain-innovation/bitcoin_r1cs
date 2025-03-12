@@ -1,4 +1,4 @@
-use ark_crypto_primitives::crh::sha256::constraints::DigestVar;
+use crate::sha256::constraints::DigestVar;
 use ark_ff::PrimeField;
 
 /// R1CS version of [SigHashCache](chain_gang::transaction::sighash::SigHashCache)
