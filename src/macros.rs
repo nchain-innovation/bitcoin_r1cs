@@ -217,6 +217,16 @@ macro_rules! combine_bp_structs {
                     }
                 }
             }
+
+            impl<F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for $combined_struct<F, P> {
+                fn into(self) -> Vec<F> {
+                    let mut out = Vec::<F>::new();
+                        $(
+                            out.extend_from_slice(&Into::<Vec<F>>::into(self.[<$type:snake _$n>]));
+                        )+
+                    out
+                }
+            }
         }
     }
 }
@@ -326,7 +336,7 @@ mod test {
     use crate::bitcoin_predicates::fixed_lock_script::FixedLockScript;
     use crate::traits::BitcoinPredicate;
     use crate::{
-        bitcoin_predicates::data_structures::bitcoin_unit::BitcoinUnit,
+        bitcoin_predicates::data_structures::unit::BitcoinUnit,
         constraints::tx::{TxVar, TxVarConfig},
     };
 

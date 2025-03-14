@@ -10,8 +10,8 @@ use crate::constraints::tx::TxVar;
 use crate::{constraints::tx::TxVarConfig, traits::BitcoinPredicate};
 
 use crate::bitcoin_predicates::data_structures::{
-    bitcoin_unit::{BitcoinUnit, BitcoinUnitVar},
-    byte_vector::{ByteVector, ByteVectorVar},
+    unit::{BitcoinUnit, BitcoinUnitVar},
+    byte_array::{ByteArray, ByteArrayVar},
 };
 
 /// Bitcoin Predicate that prevents replay attacks
@@ -43,11 +43,11 @@ impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> BitcoinPredicate<F, 
 {
     type LockingData = BitcoinUnit<F, P>;
     type UnlockingData = BitcoinUnit<F, P>;
-    type Witness = ByteVector<N, F, P>;
+    type Witness = ByteArray<N, F, P>;
 
     type LockingDataVar = BitcoinUnitVar<F, P>;
     type UnlockingDataVar = BitcoinUnitVar<F, P>;
-    type WitnessVar = ByteVectorVar<N, F, P>;
+    type WitnessVar = ByteArrayVar<N, F, P>;
 
     fn generate_constraints(
         &self,
@@ -84,8 +84,8 @@ mod test {
     use crate::traits::BitcoinPredicate;
     use crate::{
         bitcoin_predicates::data_structures::{
-            bitcoin_unit::BitcoinUnitVar,
-            byte_vector::{ByteVector, ByteVectorVar},
+            unit::BitcoinUnitVar,
+            byte_array::{ByteArray, ByteArrayVar},
         },
         constraints::tx::{TxVar, TxVarConfig},
     };
@@ -141,7 +141,7 @@ mod test {
         let cs = ConstraintSystem::<F>::new_ref();
         let tx_var = TxVar::<F, Config>::new_input(cs.clone(), || Ok(tx)).unwrap();
         let wit_var =
-            ByteVectorVar::<20, F, Config>::new_input(cs.clone(), || Ok(ByteVector::new(hash)))
+            ByteArrayVar::<20, F, Config>::new_input(cs.clone(), || Ok(ByteArray::new(hash)))
                 .unwrap();
         predicate
             .enforce_constraints(

@@ -6,7 +6,7 @@
 use crate::sha256::{Sha256Wrapper, r1cs_utils::UInt32Ext};
 use ark_crypto_primitives::crh::{CRHGadget, TwoToOneCRHGadget};
 
-use core::{borrow::Borrow, iter, marker::PhantomData};
+use core::{borrow::Borrow, marker::PhantomData};
 
 use ark_ff::PrimeField;
 use ark_r1cs_std::{
@@ -51,7 +51,7 @@ impl<ConstraintF: PrimeField> Default for Sha256Gadget<ConstraintF> {
         Self {
             state: H.iter().cloned().map(UInt32::constant).collect(),
             completed_data_blocks: 0,
-            pending: iter::repeat(0u8).take(64).map(UInt8::constant).collect(),
+            pending: std::iter::repeat_n(0u8, 64).map(UInt8::constant).collect(),
             num_pending: 0,
         }
     }

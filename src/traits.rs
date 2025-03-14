@@ -11,8 +11,8 @@ pub trait PreSigHashSerialise<F: Field> {
 
 /// Predicate to enforce conditions of the form `C((spent_data, unlocking_data, spending_data), witness) = 1`
 pub trait BitcoinPredicate<F: PrimeField, P: TxVarConfig + Clone> {
-    type LockingData: Clone;
-    type UnlockingData: Clone;
+    type LockingData: Clone + Into<Vec<F>>;
+    type UnlockingData: Clone + Into<Vec<F>>;
     type Witness: Clone;
 
     type LockingDataVar: AllocVar<Self::LockingData, F>;

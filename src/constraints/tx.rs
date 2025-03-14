@@ -379,7 +379,7 @@ mod tests {
         const LEN_LOCK_SCRIPTS: &[usize] = &[0x19, 0x19]; // len P2PKH
     }
 
-    fn test_pre_sighash_serialisation(sighash_flags: u8) -> () {
+    fn test_pre_sighash_serialisation(sighash_flags: u8) {
         let lock_script =
             Script(hex::decode("76a91402b74813b047606b4b3fbdfb1a6e8e053fdb8dab88ac").unwrap());
         let addr = "mfmKD4cP6Na7T8D87XRSiR7shA1HNGSaec";

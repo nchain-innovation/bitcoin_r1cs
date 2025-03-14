@@ -19,6 +19,12 @@ pub struct BitcoinUnitVar<F: PrimeField, P: TxVarConfig + Clone> {
     _config: PhantomData<P>,
 }
 
+impl<F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for BitcoinUnit<F, P> {
+    fn into(self) -> Vec<F> {
+        Vec::<F>::new()
+    }
+}
+
 impl<F: PrimeField, P: TxVarConfig + Clone> Default for BitcoinUnit<F, P> {
     fn default() -> Self {
         Self {

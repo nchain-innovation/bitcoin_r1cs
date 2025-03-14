@@ -24,8 +24,8 @@ pub struct RefTxCircuit<
 > {
     /// Public inputs
     pub locking_data: B::LockingData,
-    pub unlocking_data: B::UnlockingData,
     pub integrity_tag: Option<TransactionIntegrityTag>,
+    pub unlocking_data: B::UnlockingData,
     /// Witness values
     pub witness: B::Witness,
     pub spending_data: Option<Tx>,
@@ -36,6 +36,21 @@ pub struct RefTxCircuit<
     pub predicate: B,
 }
 
+impl<B, F, P> RefTxCircuit<B, F, P>
+where 
+    B: BitcoinPredicate<F, P>,
+    F: PrimeField + Clone,
+    P: TxVarConfig + TransactionIntegrityConfig + Clone,
+{
+    pub fn public_input(&self) -> Vec<F> {
+        let mut input = Vec::<F>::new();
+        input.extend_from_slice(&self.locking_data.clone().into());
+        input.extend_from_slice(&Into::<Vec<F>>::into(self.integrity_tag.clone().unwrap_or_default()));
+        input.extend_from_slice(&self.unlocking_data.clone().into());
+
+        return input;
+    }
+}
 impl<B, F, P> ConstraintSynthesizer<F> for RefTxCircuit<B, F, P>
 where
     B: BitcoinPredicate<F, P>,
@@ -46,15 +61,15 @@ where
         // Allocate the inputs
         let locking_data: B::LockingDataVar =
             B::LockingDataVar::new_input(cs.clone(), || Ok(self.locking_data))?;
-        let unlocking_data: B::UnlockingDataVar =
-            B::UnlockingDataVar::new_input(cs.clone(), || Ok(self.unlocking_data))?;
         let integrity_tag: TransactionIntegrityTagVar<F> =
             TransactionIntegrityTagVar::<F>::new_input(cs.clone(), || {
                 Ok(self.integrity_tag.unwrap_or_default())
             })?;
+        let unlocking_data: B::UnlockingDataVar =
+            B::UnlockingDataVar::new_input(cs.clone(), || Ok(self.unlocking_data))?;
         // Allocate the witnesses
         let witness: B::WitnessVar = B::WitnessVar::new_witness(cs.clone(), || Ok(self.witness))?;
-        let spending_data: TxVar<F, P> = TxVar::<F, P>::new_input(cs.clone(), || {
+        let spending_data: TxVar<F, P> = TxVar::<F, P>::new_witness(cs.clone(), || {
             Ok(self.spending_data.unwrap_or(default_tx::<P>()))
         })?;
         let default_prev_lock_script = Script(vec![0; P::LEN_PREV_LOCK_SCRIPT]);
@@ -105,7 +120,7 @@ mod test {
     use chain_gang::transaction::p2pkh;
     use chain_gang::util::Hash256;
 
-    use crate::bitcoin_predicates::data_structures::bitcoin_unit::BitcoinUnit;
+    use crate::bitcoin_predicates::data_structures::unit::BitcoinUnit;
     use crate::bitcoin_predicates::fixed_lock_script::FixedLockScript;
     use crate::constraints::tx::TxVarConfig;
     use crate::transaction_integrity_gadget::{
@@ -149,7 +164,7 @@ mod test {
             outputs: vec![
                 TxOut {
                     satoshis: 100,
-                    lock_script: lock_script,
+                    lock_script,
                 },
                 TxOut {
                     satoshis: 259899900,
@@ -169,8 +184,8 @@ mod test {
         let test_predicate = TestPredicate::new(p2pkh::create_lock_script(&hash160), 0);
         let test_circuit = RefTxCircuit::<TestPredicate, F, Config> {
             locking_data: BitcoinUnit::default(),
-            unlocking_data: BitcoinUnit::default(),
             integrity_tag: Some(tag),
+            unlocking_data: BitcoinUnit::default(),
             witness: BitcoinUnit::default(),
             spending_data: Some(tx),
             prev_lock_script: Some(Script(vec![])),

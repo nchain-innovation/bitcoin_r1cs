@@ -9,7 +9,7 @@ use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
 
 use chain_gang::script::Script;
 
-use crate::bitcoin_predicates::data_structures::bitcoin_unit::{BitcoinUnit, BitcoinUnitVar};
+use crate::bitcoin_predicates::data_structures::unit::{BitcoinUnit, BitcoinUnitVar};
 use crate::constraints::{
     script::ScriptVar,
     tx::{TxVar, TxVarConfig},
@@ -87,7 +87,7 @@ mod test {
     use chain_gang::transaction::p2pkh;
     use chain_gang::util::Hash256;
 
-    use crate::bitcoin_predicates::data_structures::bitcoin_unit::BitcoinUnitVar;
+    use crate::bitcoin_predicates::data_structures::unit::BitcoinUnitVar;
     use crate::constraints::tx::TxVar;
 
     use crate::{constraints::tx::TxVarConfig, traits::BitcoinPredicate};

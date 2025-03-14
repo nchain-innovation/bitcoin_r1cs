@@ -1,7 +1,6 @@
 use ark_ff::PrimeField;
-use ark_r1cs_std::bits::{boolean::Boolean, uint32::UInt32, uint8::UInt8, ToBitsGadget};
+use ark_r1cs_std::bits::{ToBitsGadget, boolean::Boolean, uint8::UInt8, uint32::UInt32};
 use ark_relations::r1cs::SynthesisError;
-use core::iter;
 
 /// Extra traits not automatically implemented by UInt32
 pub(crate) trait UInt32Ext<ConstraintF: PrimeField>: Sized {
@@ -25,7 +24,7 @@ impl<ConstraintF: PrimeField> UInt32Ext<ConstraintF> for UInt32<ConstraintF> {
     fn shr(&self, by: usize) -> Self {
         assert!(by < 32);
 
-        let zeros = iter::repeat(Boolean::constant(false)).take(by);
+        let zeros = std::iter::repeat_n(Boolean::constant(false), by);
         let new_bits: Vec<_> = self
             .to_bits_le()
             .into_iter()
@@ -44,7 +43,7 @@ impl<ConstraintF: PrimeField> UInt32Ext<ConstraintF> for UInt32<ConstraintF> {
         let new_bits: Result<Vec<_>, SynthesisError> = self
             .to_bits_le()
             .into_iter()
-            .zip(rhs.to_bits_le().into_iter())
+            .zip(rhs.to_bits_le())
             .map(|(a, b)| a.and(&b))
             .collect();
         Ok(UInt32::from_bits_le(&new_bits?))
@@ -75,7 +74,7 @@ mod test {
     use super::*;
 
     use ark_bls12_377::Fr;
-    use ark_r1cs_std::{bits::uint32::UInt32, R1CSVar};
+    use ark_r1cs_std::{R1CSVar, bits::uint32::UInt32};
     use ark_std::rand::Rng;
 
     const NUM_TESTS: usize = 10_000;
