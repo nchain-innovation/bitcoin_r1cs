@@ -10,8 +10,8 @@ use crate::constraints::tx::TxVar;
 use crate::{constraints::tx::TxVarConfig, traits::BitcoinPredicate};
 
 use crate::bitcoin_predicates::data_structures::{
-    unit::{BitcoinUnit, BitcoinUnitVar},
     byte_array::{ByteArray, ByteArrayVar},
+    unit::{BitcoinUnit, BitcoinUnitVar},
 };
 
 /// Bitcoin Predicate that prevents replay attacks
@@ -84,8 +84,8 @@ mod test {
     use crate::traits::BitcoinPredicate;
     use crate::{
         bitcoin_predicates::data_structures::{
-            unit::BitcoinUnitVar,
             byte_array::{ByteArray, ByteArrayVar},
+            unit::BitcoinUnitVar,
         },
         constraints::tx::{TxVar, TxVarConfig},
     };

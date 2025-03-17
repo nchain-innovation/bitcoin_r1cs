@@ -14,9 +14,9 @@ pub struct FieldArray<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
     _config: PhantomData<P>,
 }
 
-impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for FieldArray<N, F, P> {
-    fn into(self) -> Vec<F> {
-        self.elements.clone().try_into().unwrap()
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> From<FieldArray<N, F, P>> for Vec<F> {
+    fn from(value: FieldArray<N, F, P>) -> Self {
+        value.elements.into()
     }
 }
 
@@ -62,7 +62,9 @@ impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> AllocVar<FieldArray<
         }
 
         Ok(Self {
-            elements: elements.try_into().expect("The length of `elements` is wrong"),
+            elements: elements
+                .try_into()
+                .expect("The length of `elements` is wrong"),
             _config: PhantomData,
         })
     }

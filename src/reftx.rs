@@ -37,7 +37,7 @@ pub struct RefTxCircuit<
 }
 
 impl<B, F, P> RefTxCircuit<B, F, P>
-where 
+where
     B: BitcoinPredicate<F, P>,
     F: PrimeField + Clone,
     P: TxVarConfig + TransactionIntegrityConfig + Clone,
@@ -45,10 +45,12 @@ where
     pub fn public_input(&self) -> Vec<F> {
         let mut input = Vec::<F>::new();
         input.extend_from_slice(&self.locking_data.clone().into());
-        input.extend_from_slice(&Into::<Vec<F>>::into(self.integrity_tag.clone().unwrap_or_default()));
+        input.extend_from_slice(&Into::<Vec<F>>::into(
+            self.integrity_tag.clone().unwrap_or_default(),
+        ));
         input.extend_from_slice(&self.unlocking_data.clone().into());
 
-        return input;
+        input
     }
 }
 impl<B, F, P> ConstraintSynthesizer<F> for RefTxCircuit<B, F, P>

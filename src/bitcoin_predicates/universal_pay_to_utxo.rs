@@ -16,11 +16,13 @@ use ark_relations::r1cs::{ConstraintSystemRef, SynthesisError};
 use crate::{constraints::tx::TxVarConfig, traits::BitcoinPredicate};
 
 use super::data_structures::{
+    field_array::{FieldArray, FieldArrayVar},
     proof::{BitcoinProof, BitcoinProofVar},
     unit::{BitcoinUnit, BitcoinUnitVar},
 };
 
-pub struct PayToUTXO<MainField: PrimeField, HelpField: PrimeField, IC: ECCyclePCDConfig<MainField, HelpField>, P: TxVarConfig + Clone> {
+/// UniversalPayToUTXO with `genesis_txid` explicitly hard-coded as locking data, not via the vk
+pub struct UniversalPayToUTXO<MainField: PrimeField, HelpField: PrimeField, IC: ECCyclePCDConfig<MainField, HelpField>, P: TxVarConfig + Clone> {
     // Parameters of the CRH
     pub crh_params: <<IC as ECCyclePCDConfig<MainField, HelpField>>::CRH as VariableLengthCRH<MainField>>::Parameters,
     // VK of the HelpCircuit
@@ -31,7 +33,7 @@ pub struct PayToUTXO<MainField: PrimeField, HelpField: PrimeField, IC: ECCyclePC
     _config: PhantomData<P>
 }
 
-impl<MainField, HelpField, IC, P> Clone for PayToUTXO<MainField, HelpField, IC, P>
+impl<MainField, HelpField, IC, P> Clone for UniversalPayToUTXO<MainField, HelpField, IC, P>
 where
     MainField: PrimeField,
     HelpField: PrimeField,
@@ -48,7 +50,7 @@ where
     }
 }
 
-impl<MainField, HelpField, IC, P> PayToUTXO<MainField, HelpField, IC, P>
+impl<MainField, HelpField, IC, P> UniversalPayToUTXO<MainField, HelpField, IC, P>
 where
     MainField: PrimeField,
     HelpField: PrimeField,
@@ -72,25 +74,25 @@ where
 }
 
 impl<MainField, HelpField, IC, P> BitcoinPredicate<MainField, P>
-    for PayToUTXO<MainField, HelpField, IC, P>
+    for UniversalPayToUTXO<MainField, HelpField, IC, P>
 where
     MainField: PrimeField,
     HelpField: PrimeField,
     IC: ECCyclePCDConfig<MainField, HelpField>,
     P: TxVarConfig + Clone,
 {
-    type LockingData = BitcoinUnit<MainField, P>;
+    type LockingData = FieldArray<1, MainField, P>;
     type UnlockingData = BitcoinUnit<MainField, P>;
     type Witness = BitcoinProof<HelpField, P, MainField, IC::HelpSNARK>;
 
-    type LockingDataVar = BitcoinUnitVar<MainField, P>;
+    type LockingDataVar = FieldArrayVar<1, MainField, P>;
     type UnlockingDataVar = BitcoinUnitVar<MainField, P>;
     type WitnessVar = BitcoinProofVar<HelpField, P, MainField, IC::HelpSNARK, IC::HelpSNARKGadget>;
 
     fn generate_constraints(
         &self,
         cs: ConstraintSystemRef<MainField>,
-        _locking_data: &Self::LockingDataVar,
+        locking_data: &Self::LockingDataVar,
         _unlocking_data: &Self::UnlockingDataVar,
         spending_data: &crate::constraints::tx::TxVar<MainField, P>,
         witness: &Self::WitnessVar,
@@ -118,6 +120,9 @@ where
             committed_input.push(byte.clone());
         }
         for byte in &input.to_bytes()? {
+            committed_input.push(byte.clone());
+        }
+        for byte in locking_data.elements[0].to_bytes()?[..32].iter() {
             committed_input.push(byte.clone());
         }
 

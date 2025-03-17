@@ -19,8 +19,8 @@ pub struct BitcoinUnitVar<F: PrimeField, P: TxVarConfig + Clone> {
     _config: PhantomData<P>,
 }
 
-impl<F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for BitcoinUnit<F, P> {
-    fn into(self) -> Vec<F> {
+impl<F: PrimeField, P: TxVarConfig + Clone> From<BitcoinUnit<F, P>> for Vec<F> {
+    fn from(_value: BitcoinUnit<F, P>) -> Self {
         Vec::<F>::new()
     }
 }

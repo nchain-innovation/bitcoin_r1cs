@@ -39,9 +39,9 @@ impl PartialEq for TransactionIntegrityTag {
     }
 }
 
-impl<F: PrimeField> Into<Vec<F>> for TransactionIntegrityTag {
-    fn into(self) -> Vec<F> {
-        vec![F::from_le_bytes_mod_order(&self.inner)]
+impl<F: PrimeField> From<TransactionIntegrityTag> for Vec<F> {
+    fn from(value: TransactionIntegrityTag) -> Self {
+        vec![F::from_le_bytes_mod_order(&value.inner)]
     }
 }
 

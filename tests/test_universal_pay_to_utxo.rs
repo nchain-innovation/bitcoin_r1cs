@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use ark_ff::PrimeField;
 use std::{
     fs::File,
     io::{Cursor, Read, Result as IoResult},
@@ -25,8 +26,8 @@ use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
 use ark_serialize::CanonicalDeserialize;
 use bitcoin_r1cs::{
     bitcoin_predicates::{
-        data_structures::{proof::BitcoinProof, unit::BitcoinUnit},
-        pay_to_utxo::PayToUTXO,
+        data_structures::{field_array::FieldArray, proof::BitcoinProof, unit::BitcoinUnit},
+        universal_pay_to_utxo::UniversalPayToUTXO,
     },
     constraints::tx::TxVarConfig,
     reftx::RefTxCircuit,
@@ -65,7 +66,7 @@ impl TransactionIntegrityConfig for Config {
     const SIGHASH_FLAG: u8 = SIGHASH_ALL | SIGHASH_FORKID;
 }
 
-type TestPayToUTXO = PayToUTXO<ScalarFieldMNT4, ScalarFieldMNT6, PCDGroth16Mnt4, Config>;
+type TestPayToUTXO = UniversalPayToUTXO<ScalarFieldMNT4, ScalarFieldMNT6, PCDGroth16Mnt4, Config>;
 
 // Test transactions, they form a transaction chain at index 0
 fn test_transactions() -> [Tx; 3] {
@@ -105,14 +106,14 @@ fn generate_test_transaction(tx: Tx) -> Tx {
 }
 
 #[test]
-fn test_pay_to_utxo() {
+fn test_universal_pay_to_utxo() {
     // These parameters have been generated using [transaction_chain_proof](https://github.com/nchain-innovation/transaction_chain_proof)
     // The genesis transaction is: `f4317e51a17c1c0dfccbbd357f17e22297ac76431c4ed4ab37766c55fd274c4c` and the index of the chain is: 0
-    // The snark used is tcp_snark
-    let crh_pp_seed_bytes = read_from_file("tests/data/crh_pp_seed.bin")
+    // The snark used is universal_tcp_snark
+    let crh_pp_seed_bytes = read_from_file("tests/data_universal/crh_pp_seed.bin")
         .map_err(|e| anyhow!("Failed to read crh_pp. Error: {}", e))
         .unwrap();
-    let help_vk_bytes = read_from_file("tests/data/help_vk.bin")
+    let help_vk_bytes = read_from_file("tests/data_universal/help_vk.bin")
         .map_err(|e: std::io::Error| anyhow!("Failed to read help_vk. Error: {}", e))
         .unwrap();
 
@@ -126,8 +127,15 @@ fn test_pay_to_utxo() {
     // Bitcoin predicate
     let pay2utxo = TestPayToUTXO::new(&crh_pp, &help_vk, 0);
 
+    // Genesis txid
+    let genesis_txid = test_transactions()[0].clone().hash();
+    let genesis_txid_as_locking_data =
+        FieldArray::<1, ScalarFieldMNT4, Config>::new([ScalarFieldMNT4::from_le_bytes_mod_order(
+            &genesis_txid.0,
+        )]);
+
     // RefTx on genesis
-    let proof_base_case = load_proof("tests/data/proof_base_case.bin", "base case");
+    let proof_base_case = load_proof("tests/data_universal/proof_base_case.bin", "base case");
     let test_tx = generate_test_transaction(test_transactions()[0].clone());
     let tag = TransactionIntegrityScheme::<Config>::commit(
         &test_tx,
@@ -136,7 +144,7 @@ fn test_pay_to_utxo() {
         &mut SigHashCache::new(),
     );
     let reftx_pay2utxo = RefTxCircuit::<TestPayToUTXO, ScalarFieldMNT4, Config> {
-        locking_data: BitcoinUnit::default(),
+        locking_data: genesis_txid_as_locking_data.clone(),
         integrity_tag: Some(tag),
         unlocking_data: BitcoinUnit::default(),
         witness: BitcoinProof::new(&proof_base_case),
@@ -155,7 +163,7 @@ fn test_pay_to_utxo() {
 
     // RefTx on first tx
     let proof_first_recursive_step = load_proof(
-        "tests/data/proof_recursive_first_step.bin",
+        "tests/data_universal/proof_recursive_first_step.bin",
         "first recursive case",
     );
     let test_tx = generate_test_transaction(test_transactions()[1].clone());
@@ -166,7 +174,7 @@ fn test_pay_to_utxo() {
         &mut SigHashCache::new(),
     );
     let reftx_pay2utxo = RefTxCircuit::<TestPayToUTXO, ScalarFieldMNT4, Config> {
-        locking_data: BitcoinUnit::default(),
+        locking_data: genesis_txid_as_locking_data.clone(),
         integrity_tag: Some(tag),
         unlocking_data: BitcoinUnit::default(),
         witness: BitcoinProof::new(&proof_first_recursive_step),
@@ -185,7 +193,7 @@ fn test_pay_to_utxo() {
 
     // RefTx on second tx
     let proof_second_recursive_step = load_proof(
-        "tests/data/proof_recursive_second_step.bin",
+        "tests/data_universal/proof_recursive_second_step.bin",
         "second recursive case",
     );
     let test_tx = generate_test_transaction(test_transactions()[2].clone());
@@ -196,7 +204,7 @@ fn test_pay_to_utxo() {
         &mut SigHashCache::new(),
     );
     let reftx_pay2utxo = RefTxCircuit::<TestPayToUTXO, ScalarFieldMNT4, Config> {
-        locking_data: BitcoinUnit::default(),
+        locking_data: genesis_txid_as_locking_data.clone(),
         integrity_tag: Some(tag),
         unlocking_data: BitcoinUnit::default(),
         witness: BitcoinProof::new(&proof_second_recursive_step),

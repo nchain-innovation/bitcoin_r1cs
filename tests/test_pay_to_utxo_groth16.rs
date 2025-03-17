@@ -107,8 +107,8 @@ fn generate_test_transaction(tx: Tx) -> Tx {
 
 #[test]
 fn test_pay_to_utxo_groth16() {
-    // These parameters have been generated using [transaction_chain_proof]
-    // The genesis transaction is: and the index of the chain is:
+    // These parameters have been generated using [transaction_chain_proof](https://github.com/nchain-innovation/transaction_chain_proof)
+    // The genesis transaction is: `f4317e51a17c1c0dfccbbd357f17e22297ac76431c4ed4ab37766c55fd274c4c` and the index of the chain is: 0
     // The snark used is tcp_snark
     let crh_pp_seed_bytes = read_from_file("tests/data/crh_pp_seed.bin")
         .map_err(|e| anyhow!("Failed to read crh_pp. Error: {}", e))
@@ -172,8 +172,11 @@ fn test_pay_to_utxo_groth16() {
 
     println!("Base case satisfied.");
 
-    // RefTx on first tx
-    let proof_first_recursive_step = load_proof("tests/data/proof_recursive_first_step.bin", "first recursive case");
+    // Proof first tx
+    let proof_first_recursive_step = load_proof(
+        "tests/data/proof_recursive_first_step.bin",
+        "first recursive case",
+    );
     let test_tx = generate_test_transaction(test_transactions()[1].clone());
     let tag = TransactionIntegrityScheme::<Config>::commit(
         &test_tx,
@@ -200,8 +203,11 @@ fn test_pay_to_utxo_groth16() {
 
     println!("First recursive case satisfied.");
 
-    // RefTx on genesis
-    let proof_second_recursive_step = load_proof("tests/data/proof_recursive_second_step.bin", "second recursive case");
+    // Proof second tx
+    let proof_second_recursive_step = load_proof(
+        "tests/data/proof_recursive_second_step.bin",
+        "second recursive case",
+    );
     let test_tx = generate_test_transaction(test_transactions()[2].clone());
     let tag = TransactionIntegrityScheme::<Config>::commit(
         &test_tx,
@@ -246,6 +252,6 @@ fn load_proof(file_path: &str, case: &str) -> Proof<MNT6_753> {
         .map_err(|e| anyhow!("Failed to read proof {}. Error: {}", case, e))
         .unwrap();
     Proof::<MNT6_753>::deserialize_unchecked(proof_bytes.as_slice())
-            .map_err(|e| anyhow!("Failed to deserialize proof {}. Error: {}", case, e))
-            .unwrap()
+        .map_err(|e| anyhow!("Failed to deserialize proof {}. Error: {}", case, e))
+        .unwrap()
 }

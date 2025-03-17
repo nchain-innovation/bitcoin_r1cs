@@ -15,9 +15,13 @@ pub struct ByteArray<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
     _config: PhantomData<P>,
 }
 
-impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for ByteArray<N, F, P> {
-    fn into(self) -> Vec<F> {
-        self.bytes.iter().map(|byte| F::from_le_bytes_mod_order(&[byte.clone()])).collect::<Vec<F>>()
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> From<ByteArray<N, F, P>> for Vec<F> {
+    fn from(value: ByteArray<N, F, P>) -> Self {
+        value
+            .bytes
+            .iter()
+            .map(|byte| F::from_le_bytes_mod_order(&[*byte]))
+            .collect::<Vec<F>>()
     }
 }
 
