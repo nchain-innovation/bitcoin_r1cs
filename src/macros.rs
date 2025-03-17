@@ -69,7 +69,7 @@ macro_rules! _combine_predicates {
             );
 
             // Generate the Witness struct
-            combine_bp_structs!(
+            combine_witness_structs!(
                 Witness,
                 $combined_witness,
                 $( ($type < $($gen),* >, $n) ),+
@@ -138,8 +138,8 @@ macro_rules! _combine_predicates {
                     spending_data: &TxVar<F, P>,
                     witness: &Self::WitnessVar,
                 ) -> Result<ark_r1cs_std::prelude::Boolean<F>, ark_relations::r1cs::SynthesisError> {
-                    match $logical_condition {
-                        true => ark_r1cs_std::prelude::Boolean::<F>::kary_and(&[
+                    if $logical_condition {
+                        ark_r1cs_std::prelude::Boolean::<F>::kary_and(&[
                             $(
                                 self.[<$type:snake _$n>].generate_constraints(
                                     cs.clone(),
@@ -149,8 +149,9 @@ macro_rules! _combine_predicates {
                                     &witness.[<$type:snake _$n>],
                                 )?,
                             )+
-                        ]),
-                        false => ark_r1cs_std::prelude::Boolean::<F>::kary_or(&[
+                        ])
+                    } else {
+                        ark_r1cs_std::prelude::Boolean::<F>::kary_or(&[
                             $(
                                 self.[<$type:snake _$n>].generate_constraints(
                                     cs.clone(),
@@ -160,7 +161,7 @@ macro_rules! _combine_predicates {
                                     &witness.[<$type:snake _$n>],
                                 )?,
                             )+
-                        ]),
+                        ])
                     }
                 }
             }
@@ -194,11 +195,54 @@ macro_rules! combine_bp_structs {
                 }
             }
 
-            impl<F: PrimeField, P: TxVarConfig + Clone> Default for $combined_struct<F, P> {
-                fn default() -> Self {
+            impl<F: PrimeField, P: TxVarConfig + Clone> $combined_struct<F, P> {
+                pub fn new(
+                    $(
+                        [<$type:snake _$n>]: <$type<F,P> as BitcoinPredicate<F,P>>::$bp_type,
+                    )+
+                ) -> Self {
                     Self {
                         $(
-                            [<$type:snake _$n>]: <$type<F,P> as BitcoinPredicate<F,P>>::$bp_type::default(),
+                            [<$type:snake _$n>]: [<$type:snake _$n>],
+                        )+
+                    }
+                }
+            }
+
+            impl<F: PrimeField, P: TxVarConfig + Clone> From<$combined_struct<F, P>> for Vec<F> {
+                fn from(data: $combined_struct<F, P>) -> Vec<F> {
+                    let mut out = Vec::<F>::new();
+                        $(
+                            out.extend_from_slice(&Into::<Vec<F>>::into(data.[<$type:snake _$n>]));
+                        )+
+                    out
+                }
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! combine_witness_structs {
+    (
+        $bp_type: ident,
+        $combined_struct: ident,
+        $( ($type:ident < $($gen:tt),* >, $n:expr) ),+
+        $(,)?
+    ) => {
+        paste::paste! {
+            // Generate the combined struct
+            struct $combined_struct<F: PrimeField, P: TxVarConfig + Clone> {
+                $(
+                    pub [<$type:snake _$n>]: <$type<F,P> as BitcoinPredicate<F,P>>::$bp_type,
+                )+
+            }
+
+            impl<F: PrimeField, P: TxVarConfig + Clone> Clone for $combined_struct<F, P> {
+                fn clone(&self) -> Self {
+                    Self {
+                        $(
+                            [<$type:snake _$n>]: self.[<$type:snake _$n>].clone(),
                         )+
                     }
                 }
@@ -215,16 +259,6 @@ macro_rules! combine_bp_structs {
                             [<$type:snake _$n>]: [<$type:snake _$n>],
                         )+
                     }
-                }
-            }
-
-            impl<F: PrimeField, P: TxVarConfig + Clone> Into<Vec<F>> for $combined_struct<F, P> {
-                fn into(self) -> Vec<F> {
-                    let mut out = Vec::<F>::new();
-                        $(
-                            out.extend_from_slice(&Into::<Vec<F>>::into(self.[<$type:snake _$n>]));
-                        )+
-                    out
                 }
             }
         }
@@ -271,10 +305,10 @@ macro_rules! combine_bp_vars {
 #[macro_export]
 macro_rules! and_combine_predicates {
     (
-        $combined_spent_data:ident,
+        $combined_locking_data:ident,
         $combined_unlocking_data:ident,
         $combined_witness:ident,
-        $combined_spent_data_var:ident,
+        $combined_locking_data_var:ident,
         $combined_unlocking_data_var:ident,
         $combined_witness_var:ident,
         $output:ident,
@@ -283,10 +317,10 @@ macro_rules! and_combine_predicates {
     ) => {
         _combine_predicates!(
             true,
-            $combined_spent_data,
+            $combined_locking_data,
             $combined_unlocking_data,
             $combined_witness,
-            $combined_spent_data_var,
+            $combined_locking_data_var,
             $combined_unlocking_data_var,
             $combined_witness_var,
             $output,
