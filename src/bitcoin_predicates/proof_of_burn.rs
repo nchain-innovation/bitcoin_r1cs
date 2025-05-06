@@ -19,7 +19,7 @@ use chain_gang::script::{
     op_codes::{OP_0, OP_RETURN},
 };
 
-use super::{fixed_lock_script::FixedLockScript, universal_pay_to_utxo::UniversalPayToUTXO};
+use super::{fixed_sub_lock_script::FixedSubLockScript, universal_pay_to_utxo::UniversalPayToUTXO};
 
 use ark_ff::PrimeField;
 
@@ -114,14 +114,15 @@ where
         );
 
         // Associated FixedLockingScript
-        let is_burnt = FixedLockScript::<MainField, P>::new(Script(vec![OP_0, OP_RETURN]), 0)
-            .generate_constraints(
-                cs.clone(),
-                &BitcoinUnitVar::default(),
-                &BitcoinUnitVar::default(),
-                spending_data,
-                &BitcoinUnitVar::default(),
-            );
+        let is_burnt =
+            FixedSubLockScript::<MainField, P>::new(Script(vec![OP_0, OP_RETURN]), 0, 0, 2)
+                .generate_constraints(
+                    cs.clone(),
+                    &BitcoinUnitVar::default(),
+                    &BitcoinUnitVar::default(),
+                    spending_data,
+                    &BitcoinUnitVar::default(),
+                );
 
         Boolean::<MainField>::kary_and(&[is_pay2utxo_satisfied?, is_burnt?])
     }
