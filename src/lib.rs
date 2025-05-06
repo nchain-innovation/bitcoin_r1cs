@@ -35,7 +35,7 @@ pub mod reftx;
 /// Implementation of Sha256 R1CS constraints taken from [ark_crypto_primitives]
 /// Re-exporting was the easiest way to avoid breaking dependencies
 pub mod sha256;
-/// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in RefTx
+/// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in REFTX
 pub mod transaction_integrity_gadget;
 
 #[macro_use]

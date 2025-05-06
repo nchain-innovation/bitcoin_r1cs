@@ -1,3 +1,4 @@
+//! Implement [BitcoinProof], to be used as a variable in Bitcoin Predicates
 use std::{borrow::Borrow, marker::PhantomData};
 
 use ark_crypto_primitives::{SNARK, SNARKGadget};

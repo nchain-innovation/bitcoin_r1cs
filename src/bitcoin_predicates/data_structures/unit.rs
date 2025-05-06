@@ -1,4 +1,4 @@
-//! Implement `BitcoinUnit`, to be used as a variable in Bitcoin Predicates
+//! Implement [BitcoinUnit], to be used as a variable in Bitcoin Predicates
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 

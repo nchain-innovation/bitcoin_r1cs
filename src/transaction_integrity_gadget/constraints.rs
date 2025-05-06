@@ -38,7 +38,7 @@ pub struct TransactionIntegrityGadget<F: PrimeField, P: TransactionIntegrityConf
 }
 
 impl<F: PrimeField> TransactionIntegrityTagVar<F> {
-    /// Convert the FpVar elements of the tag into their byte representation
+    /// Convert the FpVar elements of the tag into their little endian byte representation
     pub fn to_bytes(&self) -> Result<Vec<Vec<UInt8<F>>>, SynthesisError> {
         let chunk_size = get_chunk_size::<F>();
         let mut result: Vec<Vec<UInt8<F>>> = Vec::new();

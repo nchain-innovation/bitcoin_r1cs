@@ -1,4 +1,4 @@
-//! Implement `FieldArray`, to be used as a variable in Bitcoin Predicates
+//! Implement [FieldArray], to be used as a variable in Bitcoin Predicates
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
