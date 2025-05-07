@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use crate::sha256::constraints::DigestVar;
 use ark_ff::PrimeField;
 use ark_r1cs_std::{alloc::AllocVar, prelude::AllocationMode};
