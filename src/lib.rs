@@ -29,7 +29,7 @@ pub mod bitcoin_predicates;
 pub mod constraints;
 /// RefTx circuit, enforcing conditions of the form `C'((spent_data, unlocking_data, integrity_tag), (witness, spending_data)) = 1`
 pub mod reftx;
-/// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in RefTx
+/// Transaction integrity gadget, used to validate integrity of the `integrity_tag` against the spending data in REFTX
 pub mod transaction_integrity_gadget;
 
 #[macro_use]

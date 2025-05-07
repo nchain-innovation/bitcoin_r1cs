@@ -1,4 +1,4 @@
-//! Implement `ByteVector`, to be used as a variable in Bitcoin Predicates
+//! Implement [ByteArray], to be used as a variable in Bitcoin Predicates
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
@@ -9,18 +9,28 @@ use ark_relations::r1cs::{Namespace, SynthesisError};
 use crate::constraints::tx::TxVarConfig;
 
 #[derive(Clone)]
-pub struct ByteVector<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
+pub struct ByteArray<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
     pub bytes: [u8; N],
     _field: PhantomData<F>,
     _config: PhantomData<P>,
 }
 
-pub struct ByteVectorVar<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> From<ByteArray<N, F, P>> for Vec<F> {
+    fn from(value: ByteArray<N, F, P>) -> Self {
+        value
+            .bytes
+            .iter()
+            .map(|byte| F::from_le_bytes_mod_order(&[*byte]))
+            .collect::<Vec<F>>()
+    }
+}
+
+pub struct ByteArrayVar<const N: usize, F: PrimeField, P: TxVarConfig + Clone> {
     pub bytes: [UInt8<F>; N],
     _config: PhantomData<P>,
 }
 
-impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> Default for ByteVector<N, F, P> {
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> Default for ByteArray<N, F, P> {
     fn default() -> Self {
         Self {
             bytes: [0; N],
@@ -30,7 +40,7 @@ impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> Default for ByteVect
     }
 }
 
-impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> ByteVector<N, F, P> {
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> ByteArray<N, F, P> {
     pub fn new(bytes: [u8; N]) -> Self {
         Self {
             bytes,
@@ -40,10 +50,10 @@ impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> ByteVector<N, F, P> 
     }
 }
 
-impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> AllocVar<ByteVector<N, F, P>, F>
-    for ByteVectorVar<N, F, P>
+impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> AllocVar<ByteArray<N, F, P>, F>
+    for ByteArrayVar<N, F, P>
 {
-    fn new_variable<T: Borrow<ByteVector<N, F, P>>>(
+    fn new_variable<T: Borrow<ByteArray<N, F, P>>>(
         cs: impl Into<Namespace<F>>,
         f: impl FnOnce() -> Result<T, SynthesisError>,
         mode: AllocationMode,
@@ -51,7 +61,7 @@ impl<const N: usize, F: PrimeField, P: TxVarConfig + Clone> AllocVar<ByteVector<
         let ns = cs.into();
         let cs = ns.cs();
 
-        let data: ByteVector<N, F, P> = f().map(|data| data.borrow().clone())?;
+        let data: ByteArray<N, F, P> = f().map(|data| data.borrow().clone())?;
         let mut bytes: Vec<UInt8<F>> = Vec::new();
 
         for byte in data.bytes.iter() {

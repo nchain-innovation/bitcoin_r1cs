@@ -9,11 +9,11 @@ pub trait PreSigHashSerialise<F: Field> {
     fn pre_sighash_serialise(&self) -> Result<Vec<UInt8<F>>, SynthesisError>;
 }
 
-/// Predicate to enforce conditions of the form `C((spent_data, unlocking_data, spending_data), witness) = 1`
+/// Predicate to enforce conditions of the form `C((l_out, u_stx, stx), w) = 1`
 pub trait BitcoinPredicate<F: PrimeField, P: TxVarConfig + Clone> {
-    type LockingData: Default + Clone;
-    type UnlockingData: Default + Clone;
-    type Witness: Default + Clone;
+    type LockingData: Clone + Into<Vec<F>>;
+    type UnlockingData: Clone + Into<Vec<F>>;
+    type Witness: Clone;
 
     type LockingDataVar: AllocVar<Self::LockingData, F>;
     type UnlockingDataVar: AllocVar<Self::UnlockingData, F>;

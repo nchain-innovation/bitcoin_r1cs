@@ -2,6 +2,7 @@
 
 use std::marker::PhantomData;
 
+use ark_ff::PrimeField;
 use chain_gang::{
     messages::Tx,
     script::Script,
@@ -27,7 +28,7 @@ pub struct TransactionIntegrityScheme<P: TransactionIntegrityConfig> {
 }
 
 /// The Transaction Integrity Tag
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, Default)]
 pub struct TransactionIntegrityTag {
     pub inner: [u8; 32],
 }
@@ -35,6 +36,12 @@ pub struct TransactionIntegrityTag {
 impl PartialEq for TransactionIntegrityTag {
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
+    }
+}
+
+impl<F: PrimeField> From<TransactionIntegrityTag> for Vec<F> {
+    fn from(value: TransactionIntegrityTag) -> Self {
+        vec![F::from_le_bytes_mod_order(&value.inner)]
     }
 }
 

@@ -1,4 +1,4 @@
-//! Implement `BitcoinUnit`, to be used as a variable in Bitcoin Predicates
+//! Implement [BitcoinUnit], to be used as a variable in Bitcoin Predicates
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
@@ -17,6 +17,12 @@ pub struct BitcoinUnit<F: PrimeField, P: TxVarConfig + Clone> {
 pub struct BitcoinUnitVar<F: PrimeField, P: TxVarConfig + Clone> {
     _field: PhantomData<F>,
     _config: PhantomData<P>,
+}
+
+impl<F: PrimeField, P: TxVarConfig + Clone> From<BitcoinUnit<F, P>> for Vec<F> {
+    fn from(_value: BitcoinUnit<F, P>) -> Self {
+        Vec::<F>::new()
+    }
 }
 
 impl<F: PrimeField, P: TxVarConfig + Clone> Default for BitcoinUnit<F, P> {

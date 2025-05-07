@@ -181,8 +181,8 @@ mod tests {
         s.write_all(usize_to_var_int(unlock_script.0.len()).unwrap().as_slice())
             .unwrap();
         s.write_all(unlock_script.0.as_slice()).unwrap();
-        s.write_u64::<LittleEndian>(prev_amount.clone()).unwrap();
-        s.write_u32::<LittleEndian>(txin.sequence.clone()).unwrap();
+        s.write_u64::<LittleEndian>(prev_amount).unwrap();
+        s.write_u32::<LittleEndian>(txin.sequence).unwrap();
 
         let cs = ConstraintSystem::<F>::new_ref();
         let txin_var: TxInVar<F> = TxInVar::<F>::new_input(cs.clone(), || Ok(txin)).unwrap();

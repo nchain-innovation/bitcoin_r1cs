@@ -17,26 +17,32 @@ use crate::constraints::{
 use crate::traits::BitcoinPredicate;
 
 /// Bitcoin Predicate to enforce that the output of the transaction at `index`
-/// has locking script equal to `lock_script`
-pub struct FixedLockScript<F: PrimeField, P: TxVarConfig + Clone> {
+/// has locking script equal to `lock_script` between bytes `start` and `end`
+/// **Note**: Even though only a sub locking script is enforced, the total length of
+/// the locking script is fixed by `P`
+pub struct FixedSubLockScript<F: PrimeField, P: TxVarConfig + Clone> {
     pub lock_script: Script,
     pub index: usize,
+    pub start: usize,
+    pub end: usize,
     _phantom_field: PhantomData<F>,
     _phantom_config: PhantomData<P>,
 }
 
-impl<F: PrimeField, P: TxVarConfig + Clone> FixedLockScript<F, P> {
-    pub fn new(lock_script: Script, index: usize) -> Self {
+impl<F: PrimeField, P: TxVarConfig + Clone> FixedSubLockScript<F, P> {
+    pub fn new(lock_script: Script, index: usize, start: usize, end: usize) -> Self {
         Self {
             lock_script,
             index,
+            start,
+            end,
             _phantom_field: PhantomData,
             _phantom_config: PhantomData,
         }
     }
 }
 
-impl<F: PrimeField, P: TxVarConfig + Clone> BitcoinPredicate<F, P> for FixedLockScript<F, P> {
+impl<F: PrimeField, P: TxVarConfig + Clone> BitcoinPredicate<F, P> for FixedSubLockScript<F, P> {
     type LockingData = BitcoinUnit<F, P>;
     type UnlockingData = BitcoinUnit<F, P>;
     type Witness = BitcoinUnit<F, P>;
@@ -61,13 +67,17 @@ impl<F: PrimeField, P: TxVarConfig + Clone> BitcoinPredicate<F, P> for FixedLock
             spending_data.outputs.len()
         );
 
-        // Enforce that output at index `self.index` has the correct locking script
-        spending_data.outputs[self.index]
-            .lock_script
-            .is_eq(&ScriptVar::<F>::new_constant(
-                cs.clone(),
-                self.lock_script.clone(),
-            )?)
+        assert!(
+            self.end <= spending_data.outputs[self.index].lock_script.0.len(),
+            "End index: {} is larger the the size of the locking script: {}",
+            self.end,
+            spending_data.outputs[self.index].lock_script.0.len()
+        );
+
+        // Enforce that output at index `self.index` has the correct sub locking script
+        let fixed_sub_lock = ScriptVar::<F>::new_constant(cs.clone(), self.lock_script.clone())?;
+        spending_data.outputs[self.index].lock_script.0[self.start..self.end]
+            .is_eq(&fixed_sub_lock.0)
     }
 }
 
@@ -81,6 +91,7 @@ mod test {
     use ark_relations::r1cs::ConstraintSystem;
     use chain_gang::address::addr_decode;
     use chain_gang::script::Script;
+    use chain_gang::script::op_codes::{OP_0, OP_1};
 
     use chain_gang::messages::{OutPoint, Tx, TxIn, TxOut};
     use chain_gang::network::Network;
@@ -92,7 +103,7 @@ mod test {
 
     use crate::{constraints::tx::TxVarConfig, traits::BitcoinPredicate};
 
-    use super::FixedLockScript;
+    use super::FixedSubLockScript;
 
     #[derive(Clone)]
     struct Config;
@@ -100,11 +111,20 @@ mod test {
         const N_INPUTS: usize = 1;
         const N_OUTPUTS: usize = 2;
         const LEN_UNLOCK_SCRIPTS: &[usize] = &[0];
-        const LEN_LOCK_SCRIPTS: &[usize] = &[0x19, 0x19];
+        const LEN_LOCK_SCRIPTS: &[usize] = &[0x1c, 0x19];
     }
 
-    fn test_predicate(addr: &str, lock_script: Script, index: usize, expected: bool) {
+    fn test_predicate(
+        addr: &str,
+        lock_script: Script,
+        index: usize,
+        start: usize,
+        end: usize,
+        expected: bool,
+    ) {
         let hash160 = addr_decode(addr, Network::BSV_Testnet).unwrap().0;
+        let mut extended_lock_script = lock_script.clone();
+        extended_lock_script.append_slice(&[OP_0, OP_0, OP_1]);
         let tx = Tx {
             version: 2,
             inputs: vec![TxIn {
@@ -121,7 +141,7 @@ mod test {
             outputs: vec![
                 TxOut {
                     satoshis: 100,
-                    lock_script: lock_script.clone(),
+                    lock_script: extended_lock_script,
                 },
                 TxOut {
                     satoshis: 259899900,
@@ -131,7 +151,7 @@ mod test {
             lock_time: 0,
         };
 
-        let predicate = FixedLockScript::<F, Config>::new(lock_script, index);
+        let predicate = FixedSubLockScript::<F, Config>::new(lock_script, index, start, end);
 
         let cs = ConstraintSystem::<F>::new_ref();
         let tx_var = TxVar::<F, Config>::new_input(cs.clone(), || Ok(tx)).unwrap();
@@ -152,7 +172,15 @@ mod test {
         let addr = "mfmKD4cP6Na7T8D87XRSiR7shA1HNGSaec";
         let hash160 = addr_decode(addr, Network::BSV_Testnet).unwrap().0;
         let lock_script = p2pkh::create_lock_script(&hash160);
-        test_predicate(addr, lock_script, 0, true);
+        test_predicate(addr, lock_script, 0, 0, 0x19, true);
+    }
+
+    #[test]
+    fn test_predicate_is_ok_2() {
+        let addr = "mfmKD4cP6Na7T8D87XRSiR7shA1HNGSaec";
+        let hash160 = addr_decode(addr, Network::BSV_Testnet).unwrap().0;
+        let lock_script = p2pkh::create_lock_script(&hash160);
+        test_predicate(addr, lock_script, 1, 0, 0x19, true);
     }
 
     #[test]
@@ -161,6 +189,14 @@ mod test {
         let wrong_addr = "mzXd2pQG2dbgK9trYAZcpKycWDEfjVbeMz";
         let hash160 = addr_decode(addr, Network::BSV_Testnet).unwrap().0;
         let lock_script = p2pkh::create_lock_script(&hash160);
-        test_predicate(wrong_addr, lock_script, 1, false);
+        test_predicate(wrong_addr, lock_script, 1, 0, 0x19, false);
+    }
+
+    #[test]
+    fn test_predicate_fails_2() {
+        let addr = "mfmKD4cP6Na7T8D87XRSiR7shA1HNGSaec";
+        let hash160 = addr_decode(addr, Network::BSV_Testnet).unwrap().0;
+        let lock_script = p2pkh::create_lock_script(&hash160);
+        test_predicate(addr, lock_script, 0, 1, 0x1a, false);
     }
 }
