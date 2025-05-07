@@ -1,8 +1,13 @@
 # bitcoin_r1cs
 
-This library provides the implementation of R1CS versions of Bitcoin structures, e.g. transactions, and functions, e.g. TxID calculation, sighash calculation, etcetera.
+This library provides the implementation of:
+- R1CS versions of Bitcoin structures, e.g. transaction inputs, outputs, etc.
+- R1CS version of Bitcoin functions, e.g. TxID calculation, sighash calculation, etc.
+- [`REFTX`](./docs/reftx.md) transformation
 
 Bitcoin structures are taken from the library [`chain_gang`](https://github.com/nchain-innovation/chain-gang), while the R1CS variables are built using the framework provided by the [`ark_r1cs_std`](https://github.com/arkworks-rs/r1cs-std) library.
+
+**Note:** This branch contains an R1CS implementation of SHA256. This implementation was taken from the crate [`ark_crypto_primitives`](https://github.com/arkworks-rs/crypto-primitives). The reason why we exported it is that the current branch of this repository works with arkworks version `0.3.0`, and SHA256 is not implemented in `ark_crypto_primitives` at version `0.3.0`. To avoid breaking dependencies elsewhere, we exported the implementation.
  
 ## Example
 
