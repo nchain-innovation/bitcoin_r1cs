@@ -113,7 +113,7 @@ where
             witness,
         );
 
-        // Associated FixedLockingScript
+        // Associated FixedSubLockScript
         let is_burnt =
             FixedSubLockScript::<MainField, P>::new(Script(vec![OP_0, OP_RETURN]), 0, 0, 2)
                 .generate_constraints(

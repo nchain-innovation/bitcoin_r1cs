@@ -3,7 +3,7 @@
 This library provides the implementation of:
 - R1CS versions of Bitcoin structures, e.g. transaction inputs, outputs, etc.
 - R1CS version of Bitcoin functions, e.g. TxID calculation, sighash calculation, etc.
-- [REFTX](./docs/reftx.md) transformation
+- [`REFTX`](./docs/reftx.md) transformation
 
 Bitcoin structures are taken from the library [`chain_gang`](https://github.com/nchain-innovation/chain-gang), while the R1CS variables are built using the framework provided by the [`ark_r1cs_std`](https://github.com/arkworks-rs/r1cs-std) library.
 
