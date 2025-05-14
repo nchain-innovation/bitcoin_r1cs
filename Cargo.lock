@@ -290,7 +290,7 @@ dependencies = [
 [[package]]
 name = "ark-pcd"
 version = "0.1.0"
-source = "git+https://github.com/BarbacoviF/pcd.git?branch=barbacovif%2Fuse-short-weierstrass-curve#1bd8f435cfaff4dff65680270128a035cbbe4d2c"
+source = "git+https://github.com/nchain-innovation/pcd.git?branch=teranodegroup%2Fuse-short-weierstrass-curve#1bd8f435cfaff4dff65680270128a035cbbe4d2c"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
